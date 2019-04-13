@@ -1,5 +1,5 @@
 {
-  "name": "elasticquent/elasticquent",
+  "name": "votong/elasticquent",
   "type": "library",
   "description": "Maps Laravel Eloquent models to Elasticsearch types.",
   "keywords": [
@@ -7,7 +7,7 @@
     "eloquent",
     "laravel"
   ],
-  "homepage": "https://github.com/elasticquent/Elasticquent",
+  "homepage": "https://github.com/votong/Elasticquent",
   "license": "MIT",
   "authors": [
     {
@@ -29,7 +29,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Elasticquent\\": "src/"
+      "VoTong\\": "src/"
     }
   },
   "extra": {
