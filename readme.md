@@ -1,3 +1,7 @@
+# votong/elasticquent
+
+It is cloned from [Elasticquent](https://github.com/elasticquent/Elasticquent). Same code same everything but it is compatible with Laravel 8.
+
 # Elasticquent
 
 _Elasticsearch for Eloquent Laravel Models_

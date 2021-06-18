@@ -11,6 +11,12 @@ trait ElasticquentCollectionTrait
     use ElasticquentClientTrait;
 
     /**
+     * @var int The number of records (ie. models) to send to Elasticsearch in one go
+     * Also, the number of models to get from the database at a time using Eloquent's chunk()
+     */
+    static public $entriesToSendToElasticSearchInOneGo = 500;
+
+    /**
      * Add To Index
      *
      * Add all documents in this collection to to the Elasticsearch document index.
@@ -23,21 +29,43 @@ trait ElasticquentCollectionTrait
             return null;
         }
 
-        $params = array();
+        // Use an stdClass to store result of elasticsearch operation
+        $result = new \stdClass;
 
-        foreach ($this->all() as $item) {
-            $params['body'][] = array(
-                'index' => array(
-                    '_id' => $item->getKey(),
-                    '_type' => $item->getTypeName(),
-                    '_index' => $item->getIndexName(),
-                ),
-            );
+        // Iterate according to the amount configured, and put that iteration's worth of records into elastic search
+        // This is done so that we do not exceed the maximum request size
+        $all = $this->all();
+        $iteration = 0;
+        do {
+            $chunk = array_slice($all, (0 + ($iteration * static::$entriesToSendToElasticSearchInOneGo)),  static::$entriesToSendToElasticSearchInOneGo);
 
-            $params['body'][] = $item->getIndexDocumentData();
-        }
+            $params = array();
+            foreach ($chunk as $item) {
+                $params['body'][] = array(
+                    'index' => array(
+                        '_id' => $item->getKey(),
+                        '_type' => $item->getTypeName(),
+                        '_index' => $item->getIndexName(),
+                    ),
+                );
 
-        return $this->getElasticSearchClient()->bulk($params);
+                $params['body'][] = $item->getIndexDocumentData();
+            }
+
+            $result = $this->getElasticSearchClient()->bulk($params);
+
+            // Check for errors
+            if ( (array_key_exists('errors', $result) && $result['errors'] != false ) || (array_key_exists('Message', $result) && stristr('Request size exceeded', $result['Message']) !== false)) {
+                break;
+            }
+
+            // Remove vars immediately to prevent them hanging around in memory, in case we have a large number of iterations
+            unset($chunk, $params);
+
+            ++$iteration;
+        } while (count($all) > ($iteration * static::$entriesToSendToElasticSearchInOneGo) );
+
+        return $result;
     }
 
     /**
